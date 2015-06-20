@@ -13,7 +13,6 @@
 #include <GL/glu.h>
 #include <GL/gl.h>
 #endif
-#include <opencv2/opencv.hpp>
 #include <LeapMath.h>
 #include <OVR_CAPI_0_5_0.h>
 #include <memory>
@@ -31,11 +30,6 @@ oculus_vr::OculusHmd *hmd;
 // for Leap
 
 hand_listener::HandInputListener listener;
-
-/////////////////////////////////
-// for OpenCV
-cv::Size window_size(800, 600);
-// cv::VideoWriter video_output;
 
 void reshape_func(int width, int height) {
   glViewport(0, 0, width, height);
@@ -75,18 +69,7 @@ void apply_world_quaternion(const Quaternion &q) {
   glMultMatrixf(m);
 }
 
-void output_view() {
-  cv::Mat frame(window_size, CV_8UC3);
-  glReadPixels(0, 0, frame.cols, frame.rows
-      , GL_RGB, GL_UNSIGNED_BYTE, frame.data);
-  cv::cvtColor(frame, frame, CV_RGB2BGR);
-  cv::flip(frame, frame, 0);
-  // video_output << frame;
-}
-
 void display_func(void) {
-  output_view();
-
   listener.lock();
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -183,7 +166,6 @@ void idle_func(void) {
 }
 
 static void ExitNx() {
-  // video_output.release();
 }
 
 void init_opengl() {
@@ -231,7 +213,7 @@ int main(int argc, char** argv) {
 
   glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
 
-  glutInitWindowSize(window_size.width, window_size.height);
+  glutInitWindowSize(800, 600);
 
   int mainHandle = glutCreateWindow("Sample 1");
   glutSetWindow(mainHandle);
@@ -239,17 +221,6 @@ int main(int argc, char** argv) {
   init_opengl();
   Leap::Controller controller;
   controller.addListener(listener);
-
-  /*
-  int codec =  CV_FOURCC('m', 'p', '4', 'v');
-
-  video_output.open("output.m4v", codec, 60, window_size);
-
-  if (!video_output.isOpened()) {
-    std::cout << "Cannot open video output" << std::endl;
-    return -1;
-  }
-  */
 
   glutMainLoop();
   return 0;
