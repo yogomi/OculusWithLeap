@@ -4,12 +4,11 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#include <GLFW/glfw3.h>
 #ifdef __APPLE__
-#include <GLUT/glut.h>
 #include <OpenGL/glu.h>
 #include <OpenGL/gl.h>
 #elif __linux__
-#include <GL/glut.h>
 #include <GL/glu.h>
 #include <GL/gl.h>
 #endif
@@ -69,7 +68,13 @@ void apply_world_quaternion(const Quaternion &q) {
   glMultMatrixf(m);
 }
 
-void display_func(void) {
+void display_func(GLFWwindow *window) {
+  float ratio;
+  int width, height;
+
+  glfwGetFramebufferSize(window, &width, &height);
+  ratio = width / static_cast<float>(height);
+
   listener.lock();
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -78,8 +83,8 @@ void display_func(void) {
   glLoadIdentity();
   gluPerspective(
     60.0f,
-    static_cast<float>(glutGet(GLUT_WINDOW_WIDTH))
-    / static_cast<float>(glutGet(GLUT_WINDOW_HEIGHT)), 2.0f, 200000.0f);
+    static_cast<float>(width)
+    / static_cast<float>(height), 2.0f, 200000.0f);
   gluLookAt(0, 0, 0
       , 0, 0,  -300, 0, 1, 0);
 
@@ -144,7 +149,8 @@ void display_func(void) {
 
   glPopAttrib();
   listener.unlock();
-  glutSwapBuffers();
+  glfwSwapBuffers(window);
+  glfwPollEvents();
 }
 
 void key_func(unsigned char key, int x, int y) {
@@ -161,20 +167,20 @@ void key_func(unsigned char key, int x, int y) {
   }
 }
 
-void idle_func(void) {
-  glutPostRedisplay();
+void error_callback(int error, const char *description) {
+  fputs(description, stderr);
 }
 
-static void ExitNx() {
+static void key_callback(GLFWwindow* window
+                        , int key
+                        , int scancode
+                        , int action
+                        , int mods) {
+  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
 void init_opengl() {
-  glutDisplayFunc(display_func);
-  glutReshapeFunc(reshape_func);
-  glutKeyboardFunc(key_func);
-  glutIdleFunc(idle_func);
-  atexit(ExitNx);
-
   glEnable(GL_DEPTH_TEST);
 
   GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -209,19 +215,29 @@ int main(int argc, char** argv) {
 
   hmd = new oculus_vr::OculusHmd();
 
-  glutInit(&argc, argv);
+  glfwSetErrorCallback(error_callback);
 
-  glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+  if (!glfwInit())
+    exit(EXIT_FAILURE);
 
-  glutInitWindowSize(800, 600);
+  GLFWwindow *window = glfwCreateWindow(800, 600, "My Title", NULL, NULL);
 
-  int mainHandle = glutCreateWindow("Sample 1");
-  glutSetWindow(mainHandle);
+  glfwMakeContextCurrent(window);
+  glfwSwapInterval(1);
+  glfwSetKeyCallback(window, key_callback);
 
   init_opengl();
   Leap::Controller controller;
   controller.addListener(listener);
 
-  glutMainLoop();
+  while (!glfwWindowShouldClose(window)) {
+    display_func(window);
+  }
+
+  glfwDestroyWindow(window);
+
+  glfwTerminate();
+
+
   return 0;
 }

@@ -26,4 +26,4 @@ include_directories(${OPENGL_INCLUDE_DIRS})
 
 
 add_executable(oculus_with_leap main.cc field_line.cc Quaternion.cc hand_input_listener.cc pen_line.cc oculus.cc)
-target_link_libraries(oculus_with_leap ${OPENGL_LIBRARIES} ${LEAP_LIBRARIES} ${OVR_LIBRARY})
+target_link_libraries(oculus_with_leap ${OPENGL_LIBRARIES} ${GLFW_LIBRARIES} ${LEAP_LIBRARIES} ${OVR_LIBRARY})
