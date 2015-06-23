@@ -71,24 +71,4 @@ void OculusHmd::InitializeHmd_() {
   }
 }
 
-void application() {
-  if (ovr_Initialize(0)) {
-    ovrHmd hmd = ovrHmd_Create(0);
-
-    if (hmd) {
-      // Get more details about the HMD.
-      ovrSizei resolution = hmd->Resolution;
-      printf("Hmd is found.\n");
-
-      ovrHmd_Destroy(hmd);
-    } else {
-      printf("Cannot find hmd.\n");
-    }
-
-    ovr_Shutdown();
-  }
-
-  return;
-}
-
 }  // namespace oculus_vr
