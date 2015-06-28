@@ -1,10 +1,28 @@
 // Copyright 2014 Makoto Yano
 
+#if defined(_WIN32)
+  #define GLFW_EXPOSE_NATIVE_WIN32
+  #define GLFW_EXPOSE_NATIVE_WGL
+  #define OVR_OS_WIN32
+#elif defined(__APPLE__)
+  #define GLFW_EXPOSE_NATIVE_COCOA
+  #define GLFW_EXPOSE_NATIVE_NSGL
+  #define OVR_OS_MAC
+#elif defined(__linux__)
+  #define GLFW_EXPOSE_NATIVE_X11
+  #define GLFW_EXPOSE_NATIVE_GLX
+  #define OVR_OS_LINUX
+#endif
+
+
 #include <math.h>
 #include <unistd.h>
 #include <stdio.h>
 
+#define GL_DO_NOT_WARN_IF_MULTI_GL_VERSION_HEADERS_INCLUDED
+#define GLFW_INCLUDE_GLCOREARB
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 #ifdef __APPLE__
 #include <OpenGL/glu.h>
 #include <OpenGL/gl.h>
@@ -13,7 +31,7 @@
 #include <GL/gl.h>
 #endif
 #include <LeapMath.h>
-#include <OVR_CAPI_0_5_0.h>
+#include <OVR_CAPI_GL.h>
 #include <memory>
 
 #include "headers/pen_line.h"
@@ -156,9 +174,6 @@ void display_func(GLFWwindow *window) {
 void key_func(unsigned char key, int x, int y) {
   switch (toupper(key)) {
   case 'Q':
-    delete hmd;
-
-    oculus_vr::Shutdown();
     exit(0);
     break;
   case 'I':
@@ -220,7 +235,22 @@ int main(int argc, char** argv) {
   if (!glfwInit())
     exit(EXIT_FAILURE);
 
-  GLFWwindow *window = glfwCreateWindow(800, 600, "My Title", NULL, NULL);
+  GLFWmonitor* monitor = hmd->Monitor();
+
+  if (!monitor) {
+    printf("Cannot get monitor.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+  glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+  glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+  glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+  glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+
+  GLFWwindow *window = glfwCreateWindow(mode->width, mode->height, "My Title", glfwGetPrimaryMonitor(), NULL);
+
+  hmd->SetupOvrConfig();
 
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1);
@@ -234,10 +264,13 @@ int main(int argc, char** argv) {
     display_func(window);
   }
 
-  glfwDestroyWindow(window);
+  printf("finish\n");
 
+  glfwDestroyWindow(window);
   glfwTerminate();
 
+  delete hmd;
+  oculus_vr::Shutdown();
 
   return 0;
 }
