@@ -21,6 +21,8 @@
 #include <GLFW/glfw3native.h>
 #include <OVR_CAPI_GL.h>
 
+#include "field_line.h"
+
 namespace oculus_vr {
 
 bool Initialize();
@@ -34,6 +36,9 @@ class OculusHmd {
   ovrPoseStatef Track();
   void SetupOvrConfig();
   GLFWmonitor *Monitor();
+  void FrameInit();
+  void FrameRender(field_line::FieldLine *bg_line);
+  void FrameEnd();
 
  private:
   void InitializeHmd_();

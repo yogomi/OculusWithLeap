@@ -1,3 +1,7 @@
+
+#ifndef _HEADERS_FIELD_LINE_H_
+#define _HEADERS_FIELD_LINE_H_
+
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #elif __linux__
@@ -27,3 +31,5 @@ private:
 };
 
 } // namespace field_line
+
+#endif  // _HEADERS_FIELD_LINE_H_

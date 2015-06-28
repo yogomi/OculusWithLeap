@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "headers/field_line.h"
 #include "headers/oculus.h"
 
 namespace oculus_vr {
@@ -62,14 +63,6 @@ ovrPoseStatef OculusHmd::Track() {
     if (tracking_state_.StatusFlags & (ovrStatus_OrientationTracked |
                                         ovrStatus_PositionTracked)) {
       pose = tracking_state_.HeadPose;
-      float v = pose.ThePose.Position.x * pose.ThePose.Position.x +
-                pose.ThePose.Position.y * pose.ThePose.Position.y +
-                pose.ThePose.Position.z * pose.ThePose.Position.z;
-      printf("Success head_pos (x, y, z) = (%f, %f, %f) v = %f\n"
-              , pose.ThePose.Position.x
-              , pose.ThePose.Position.y
-              , pose.ThePose.Position.z
-              , v);
     } else {
       printf("Failed to get HMD status\n");
     }
@@ -109,6 +102,41 @@ GLFWmonitor *OculusHmd::Monitor() {
   return nullptr;
 }
 
+void OculusHmd::FrameInit() {
+  // フレームの開始
+  ovrFrameTiming frameTiming = ovrHmd_BeginFrame(hmd_, 0);
+  // FBOのバインド
+  glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer_);
+
+  return;
+}
+
+void OculusHmd::FrameRender(field_line::FieldLine *bg_line) {
+  ovrPosef eyeRenderPose[2];
+  ovrVector3f eyeRenderOffset[2];
+  eyeRenderOffset[ovrEye_Left] =
+                    eye_render_desc_[ovrEye_Left].HmdToEyeViewOffset;
+  eyeRenderOffset[ovrEye_Right] =
+                    eye_render_desc_[ovrEye_Right].HmdToEyeViewOffset;
+  ovrHmd_GetEyePoses(hmd_, 0, eyeRenderOffset, eyeRenderPose, NULL);
+  for (int eyeIndex = 0; eyeIndex < ovrEye_Count; eyeIndex++) {
+    ovrEyeType eye = hmd_->EyeRenderOrder[eyeIndex];
+
+    // ビューポートの設定
+    glViewport(eyeRenderViewport_[eye].Pos.x
+            , eyeRenderViewport_[eye].Pos.y
+            , eyeRenderViewport_[eye].Size.w
+            , eyeRenderViewport_[eye].Size.h);
+    bg_line->draw();
+  }
+  return;
+}
+
+void OculusHmd::FrameEnd() {
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  return;
+}
+
 void OculusHmd::SetupOvrConfig() {
   union ovrGLConfig config;
   config.OGL.Header.API = ovrRenderAPI_OpenGL;
@@ -119,12 +147,12 @@ void OculusHmd::SetupOvrConfig() {
 
   SetupOvrEye_();
 
-  eye_render_desc_[0] = ovrHmd_GetRenderDesc(hmd_
+  eye_render_desc_[ovrEye_Left] = ovrHmd_GetRenderDesc(hmd_
                                         , ovrEye_Left
-                                        , hmd_->DefaultEyeFov[0]);
-  eye_render_desc_[1] = ovrHmd_GetRenderDesc(hmd_
-                                        , ovrEye_Left
-                                        , hmd_->DefaultEyeFov[1]);
+                                        , hmd_->DefaultEyeFov[ovrEye_Left]);
+  eye_render_desc_[ovrEye_Right] = ovrHmd_GetRenderDesc(hmd_
+                                        , ovrEye_Right
+                                        , hmd_->DefaultEyeFov[ovrEye_Right]);
 
   ovrBool result = ovrHmd_ConfigureRendering(hmd_, &config.Config,
                                     // ovrDistortionCap_Chromatic |
@@ -168,12 +196,14 @@ void OculusHmd::SetupOvrEye_() {
                                                   , hmd_->DefaultEyeFov[0]
                                                   , 1.0f);
   ovrSizei recommenedTex1Size = ovrHmd_GetFovTextureSize(hmd_
-                                                  , ovrEye_Left
+                                                  , ovrEye_Right
                                                   , hmd_->DefaultEyeFov[1]
                                                   , 1.0f);
   ovrSizei renderTargetSize;
   renderTargetSize.w  = recommenedTex0Size.w + recommenedTex1Size.w;
   renderTargetSize.h = fmax(recommenedTex0Size.h, recommenedTex1Size.h);
+
+  renderTargetSize = hmd_->Resolution;
 
   // FBOの準備
   glGenFramebuffers(1, &frameBuffer_);

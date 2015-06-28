@@ -95,6 +95,8 @@ void display_func(GLFWwindow *window) {
 
   listener.lock();
 
+  hmd->FrameInit();
+
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   glMatrixMode(GL_PROJECTION);
@@ -121,8 +123,9 @@ void display_func(GLFWwindow *window) {
   // apply_world_quaternion(listener.world_x_quaternion);
   // apply_world_quaternion(listener.world_y_quaternion);
 
-  background_line->draw();
-
+  //background_line->draw();
+  hmd->FrameRender(background_line);
+/*
   glPushAttrib(GL_LIGHTING_BIT);
   GLfloat lmodel_ambient[] = { 1.0, 1.0, 1.0, 1.0 };
   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
@@ -166,6 +169,8 @@ void display_func(GLFWwindow *window) {
   }
 
   glPopAttrib();
+*/
+  hmd->FrameEnd();
   listener.unlock();
   glfwSwapBuffers(window);
   glfwPollEvents();
@@ -243,10 +248,6 @@ int main(int argc, char** argv) {
   }
 
   const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-  glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-  glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-  glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-  glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
   GLFWwindow *window = glfwCreateWindow(mode->width, mode->height, "My Title", glfwGetPrimaryMonitor(), NULL);
 
