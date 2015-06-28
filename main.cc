@@ -113,9 +113,9 @@ void display_func(GLFWwindow *window) {
 
   ovrPoseStatef pose = hmd->Track();
   Quaternion hmd_quart(pose.ThePose.Orientation.w
-                    , pose.ThePose.Orientation.x
-                    , pose.ThePose.Orientation.y
-                    , pose.ThePose.Orientation.z);
+                    , - pose.ThePose.Orientation.x
+                    , - pose.ThePose.Orientation.y
+                    , - pose.ThePose.Orientation.z);
   apply_world_quaternion(hmd_quart);
   glTranslated(listener.camera_x_position
       , -listener.camera_y_position
