@@ -111,19 +111,18 @@ void display_func(GLFWwindow *window) {
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
-  glTranslated(listener.camera_x_position
-      , -listener.camera_y_position
-      , -listener.camera_z_position);
   ovrPoseStatef pose = hmd->Track();
   Quaternion hmd_quart(pose.ThePose.Orientation.w
                     , pose.ThePose.Orientation.x
                     , pose.ThePose.Orientation.y
                     , pose.ThePose.Orientation.z);
   apply_world_quaternion(hmd_quart);
+  glTranslated(listener.camera_x_position
+      , -listener.camera_y_position
+      , -listener.camera_z_position);
   // apply_world_quaternion(listener.world_x_quaternion);
   // apply_world_quaternion(listener.world_y_quaternion);
 
-  //background_line->draw();
   hmd->FrameRender(background_line);
 /*
   glPushAttrib(GL_LIGHTING_BIT);
