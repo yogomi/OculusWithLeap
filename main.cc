@@ -120,55 +120,11 @@ void display_func(GLFWwindow *window) {
   glTranslated(listener.camera_x_position
       , -listener.camera_y_position
       , -listener.camera_z_position);
-  // apply_world_quaternion(listener.world_x_quaternion);
-  // apply_world_quaternion(listener.world_y_quaternion);
+  apply_world_quaternion(listener.world_x_quaternion);
+  apply_world_quaternion(listener.world_y_quaternion);
 
-  hmd->FrameRender(background_line);
-/*
-  glPushAttrib(GL_LIGHTING_BIT);
-  GLfloat lmodel_ambient[] = { 1.0, 1.0, 1.0, 1.0 };
-  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-  for (pen_line::LineList::iterator line = listener.penline_list.begin()
-      ; line != listener.penline_list.end(); line++) {
-    if (line->size() > 3) {
-      glPushMatrix();
-      glLineWidth(3);
-      pen_line::Line::iterator point = line->begin();
-      glColor3f(point->x, point->y, point->z);
-      ++point;
-      glBegin(GL_LINE_STRIP);
-      for (; point != line->end(); point++) {
-        glVertex3f(point->x, point->y, point->z);
-      }
-      glEnd();
-      glPopMatrix();
-    }
-  }
-  glPopAttrib();
+  hmd->FrameRender(background_line, listener);
 
-  glPushAttrib(GL_LIGHTING_BIT);
-  glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-  for (std::map<int, pen_line::TracingLine>::iterator tracing_line_map
-        = listener.tracing_lines.begin()
-      ; tracing_line_map != listener.tracing_lines.end()
-      ; tracing_line_map++) {
-    if ((*tracing_line_map).second.line.size() > 3) {
-      glPushMatrix();
-      glLineWidth(3);
-      pen_line::Line::iterator point = (*tracing_line_map).second.line.begin();
-      glColor3f(point->x, point->y, point->z);
-      ++point;
-      glBegin(GL_LINE_STRIP);
-      for (; point != (*tracing_line_map).second.line.end(); point++) {
-        glVertex3f(point->x, point->y, point->z);
-      }
-      glEnd();
-      glPopMatrix();
-    }
-  }
-
-  glPopAttrib();
-*/
   hmd->FrameEnd();
   listener.unlock();
   glfwSwapBuffers(window);
@@ -248,7 +204,11 @@ int main(int argc, char** argv) {
 
   const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
-  GLFWwindow *window = glfwCreateWindow(mode->width, mode->height, "My Title", glfwGetPrimaryMonitor(), NULL);
+  GLFWwindow *window = glfwCreateWindow(mode->width
+                                    , mode->height
+                                    , "My Title"
+                                    , glfwGetPrimaryMonitor()
+                                    , NULL);
 
   hmd->SetupOvrConfig();
 
@@ -258,6 +218,10 @@ int main(int argc, char** argv) {
 
   init_opengl();
   Leap::Controller controller;
+  controller.setPolicyFlags(
+        static_cast<Leap::Controller::PolicyFlag>(
+          Leap::Controller::PolicyFlag::POLICY_IMAGES |
+          Leap::Controller::PolicyFlag::POLICY_OPTIMIZE_HMD));
   controller.addListener(listener);
 
   while (!glfwWindowShouldClose(window)) {

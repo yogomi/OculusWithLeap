@@ -31,6 +31,8 @@
 #include <unistd.h>
 
 #include "headers/field_line.h"
+#include "headers/hand_input_listener.h"
+#include "headers/pen_line.h"
 #include "headers/oculus.h"
 
 namespace oculus_vr {
@@ -111,7 +113,8 @@ void OculusHmd::FrameInit() {
   return;
 }
 
-void OculusHmd::FrameRender(field_line::FieldLine *bg_line) {
+void OculusHmd::FrameRender(field_line::FieldLine *bg_line
+                , hand_listener::HandInputListener &listener_for_draw) {  // NOLINT
   ovrPosef eyeRenderPose[2];
   ovrVector3f eyeRenderOffset[2];
   eyeRenderOffset[ovrEye_Left] =
@@ -128,6 +131,50 @@ void OculusHmd::FrameRender(field_line::FieldLine *bg_line) {
             , eyeRenderViewport_[eye].Size.w
             , eyeRenderViewport_[eye].Size.h);
     bg_line->draw();
+
+    glPushAttrib(GL_LIGHTING_BIT);
+    GLfloat lmodel_ambient[] = { 1.0, 1.0, 1.0, 1.0 };
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
+    for (pen_line::LineList::iterator line = listener_for_draw.penline_list.begin()
+        ; line != listener_for_draw.penline_list.end(); line++) {
+      if (line->size() > 3) {
+        glPushMatrix();
+        glLineWidth(3);
+        pen_line::Line::iterator point = line->begin();
+        glColor3f(point->x, point->y, point->z);
+        ++point;
+        glBegin(GL_LINE_STRIP);
+        for (; point != line->end(); point++) {
+          glVertex3f(point->x, point->y, point->z);
+        }
+        glEnd();
+        glPopMatrix();
+      }
+    }
+    glPopAttrib();
+
+    glPushAttrib(GL_LIGHTING_BIT);
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
+    for (std::map<int, pen_line::TracingLine>::iterator tracing_line_map
+          = listener_for_draw.tracing_lines.begin()
+        ; tracing_line_map != listener_for_draw.tracing_lines.end()
+        ; tracing_line_map++) {
+      if ((*tracing_line_map).second.line.size() > 3) {
+        glPushMatrix();
+        glLineWidth(3);
+        pen_line::Line::iterator point = (*tracing_line_map).second.line.begin();
+        glColor3f(point->x, point->y, point->z);
+        ++point;
+        glBegin(GL_LINE_STRIP);
+        for (; point != (*tracing_line_map).second.line.end(); point++) {
+          glVertex3f(point->x, point->y, point->z);
+        }
+        glEnd();
+        glPopMatrix();
+      }
+    }
+
+    glPopAttrib();
   }
   return;
 }

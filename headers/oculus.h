@@ -22,6 +22,7 @@
 #include <OVR_CAPI_GL.h>
 
 #include "field_line.h"
+#include "hand_input_listener.h"
 
 namespace oculus_vr {
 
@@ -37,7 +38,8 @@ class OculusHmd {
   void SetupOvrConfig();
   GLFWmonitor *Monitor();
   void FrameInit();
-  void FrameRender(field_line::FieldLine *bg_line);
+  void FrameRender(field_line::FieldLine *bg_line
+                    , hand_listener::HandInputListener &listener_for_draw); // NOLINT
   void FrameEnd();
 
  private:
