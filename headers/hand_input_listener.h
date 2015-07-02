@@ -6,6 +6,7 @@
 #include <Leap.h>
 
 #include <map>
+#include <vector>
 
 #include "./Quaternion.h"
 #include "./pen_line.h"
@@ -37,8 +38,9 @@ class HandInputListener : public Leap::Listener {
   float camera_z_position;
 
  private:
-  Vector convert_to_world_position_(const Leap::Vector &input_vector);
+  Leap::Vector convert_to_world_position_(const Leap::Vector &input_vector);
   bool _lock;
+  std::vector<virtual_hand::SkeletonHand> skeleton_hands_;
   int open_hand_id_(const Leap::Frame& frame);
   void trace_finger_(const Leap::Hand& hand);
   void rotate_camera_(const Leap::Hand& hand);

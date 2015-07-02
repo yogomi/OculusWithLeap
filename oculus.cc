@@ -135,7 +135,8 @@ void OculusHmd::FrameRender(field_line::FieldLine *bg_line
     glPushAttrib(GL_LIGHTING_BIT);
     GLfloat lmodel_ambient[] = { 1.0, 1.0, 1.0, 1.0 };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-    for (pen_line::LineList::iterator line = listener_for_draw.penline_list.begin()
+    for (pen_line::LineList::iterator line =
+                            listener_for_draw.penline_list.begin()
         ; line != listener_for_draw.penline_list.end(); line++) {
       if (line->size() > 3) {
         glPushMatrix();
@@ -162,7 +163,8 @@ void OculusHmd::FrameRender(field_line::FieldLine *bg_line
       if ((*tracing_line_map).second.line.size() > 3) {
         glPushMatrix();
         glLineWidth(3);
-        pen_line::Line::iterator point = (*tracing_line_map).second.line.begin();
+        pen_line::Line::iterator point =
+                        (*tracing_line_map).second.line.begin();
         glColor3f(point->x, point->y, point->z);
         ++point;
         glBegin(GL_LINE_STRIP);

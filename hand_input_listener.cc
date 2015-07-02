@@ -29,6 +29,7 @@ void HandInputListener::onInit(const Controller& controller)
 void HandInputListener::onFrame(const Controller& controller) {
   lock();
   const Frame frame = controller.frame();
+  skeleton_hands_.clear();
   int open_hand_id = open_hand_id_(frame);
   if (frame.hands().isEmpty()) {
     for (std::map<int,pen_line::TracingLine>::iterator tracing_line_map = tracing_lines.begin()
