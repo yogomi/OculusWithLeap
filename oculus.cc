@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <boost/optional.hpp>
 
 #include "headers/field_line.h"
 #include "headers/hand_input_listener.h"
@@ -58,23 +59,24 @@ OculusHmd::~OculusHmd() {
   }
 }
 
-ovrPoseStatef OculusHmd::Track() {
+boost::optional<ovrPoseStatef> OculusHmd::Track() {
   ovrPoseStatef pose;
   if (hmd_) {
     tracking_state_ = ovrHmd_GetTrackingState(hmd_, ovr_GetTimeInSeconds());
     if (tracking_state_.StatusFlags & (ovrStatus_OrientationTracked |
                                         ovrStatus_PositionTracked)) {
-      pose = tracking_state_.HeadPose;
+      return boost::optional<ovrPoseStatef>(tracking_state_.HeadPose);
     } else {
       printf("Failed to get HMD status\n");
     }
-  } else {
-    InitializeHmd_();
   }
-  return pose;
+  return boost::none;
 }
 
 GLFWmonitor *OculusHmd::Monitor() {
+  if (!hmd_) {
+    return nullptr;
+  }
   int count;
   GLFWmonitor** monitors = glfwGetMonitors(&count);
 
@@ -105,6 +107,9 @@ GLFWmonitor *OculusHmd::Monitor() {
 }
 
 void OculusHmd::FrameInit() {
+  if (hmd_) {
+    return;
+  }
   // フレームの開始
   ovrFrameTiming frameTiming = ovrHmd_BeginFrame(hmd_, 0);
   // FBOのバインド
@@ -115,21 +120,7 @@ void OculusHmd::FrameInit() {
 
 void OculusHmd::FrameRender(field_line::FieldLine *bg_line
                 , hand_listener::HandInputListener &listener_for_draw) {  // NOLINT
-  ovrPosef eyeRenderPose[2];
-  ovrVector3f eyeRenderOffset[2];
-  eyeRenderOffset[ovrEye_Left] =
-                    eye_render_desc_[ovrEye_Left].HmdToEyeViewOffset;
-  eyeRenderOffset[ovrEye_Right] =
-                    eye_render_desc_[ovrEye_Right].HmdToEyeViewOffset;
-  ovrHmd_GetEyePoses(hmd_, 0, eyeRenderOffset, eyeRenderPose, NULL);
-  for (int eyeIndex = 0; eyeIndex < ovrEye_Count; eyeIndex++) {
-    ovrEyeType eye = hmd_->EyeRenderOrder[eyeIndex];
-
-    // ビューポートの設定
-    glViewport(eyeRenderViewport_[eye].Pos.x
-            , eyeRenderViewport_[eye].Pos.y
-            , eyeRenderViewport_[eye].Size.w
-            , eyeRenderViewport_[eye].Size.h);
+  auto Draw = [&bg_line, &listener_for_draw]() -> void {
     bg_line->draw();
 
     glPushAttrib(GL_LIGHTING_BIT);
@@ -177,6 +168,29 @@ void OculusHmd::FrameRender(field_line::FieldLine *bg_line
     }
 
     glPopAttrib();
+    return;
+  };
+
+  if (hmd_) {
+    ovrPosef eyeRenderPose[2];
+    ovrVector3f eyeRenderOffset[2];
+    eyeRenderOffset[ovrEye_Left] =
+                      eye_render_desc_[ovrEye_Left].HmdToEyeViewOffset;
+    eyeRenderOffset[ovrEye_Right] =
+                      eye_render_desc_[ovrEye_Right].HmdToEyeViewOffset;
+    ovrHmd_GetEyePoses(hmd_, 0, eyeRenderOffset, eyeRenderPose, NULL);
+    for (int eyeIndex = 0; eyeIndex < ovrEye_Count; eyeIndex++) {
+      ovrEyeType eye = hmd_->EyeRenderOrder[eyeIndex];
+
+      // ビューポートの設定
+      glViewport(eyeRenderViewport_[eye].Pos.x
+              , eyeRenderViewport_[eye].Pos.y
+              , eyeRenderViewport_[eye].Size.w
+              , eyeRenderViewport_[eye].Size.h);
+      Draw();
+    }
+  } else {
+    Draw();
   }
   return;
 }

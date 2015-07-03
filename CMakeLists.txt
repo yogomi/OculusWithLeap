@@ -24,6 +24,10 @@ link_directories(${GLFW_LIBRARY_DIRS})
 find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIRS})
 
+# For Boost
+FIND_PACKAGE(Boost REQUIRED)
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+
 
 add_executable(oculus_with_leap main.cc field_line.cc Quaternion.cc hand_input_listener.cc pen_line.cc oculus.cc)
 target_link_libraries(oculus_with_leap ${OPENGL_LIBRARIES} ${GLFW_LIBRARIES} ${LEAP_LIBRARIES} ${OVR_LIBRARY})

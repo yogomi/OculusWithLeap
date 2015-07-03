@@ -32,6 +32,7 @@
 #endif
 #include <LeapMath.h>
 #include <OVR_CAPI_GL.h>
+#include <boost/optional.hpp>
 #include <memory>
 
 #include "headers/pen_line.h"
@@ -111,12 +112,18 @@ void display_func(GLFWwindow *window) {
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
-  ovrPoseStatef pose = hmd->Track();
-  Quaternion hmd_quart(pose.ThePose.Orientation.w
-                    , - pose.ThePose.Orientation.x
-                    , - pose.ThePose.Orientation.y
-                    , - pose.ThePose.Orientation.z);
-  apply_world_quaternion(hmd_quart);
+  boost::optional<ovrPoseStatef> pose = hmd->Track();
+
+  if (pose) {
+    Quaternion hmd_quart((*pose).ThePose.Orientation.w
+                      , - (*pose).ThePose.Orientation.x
+                      , - (*pose).ThePose.Orientation.y
+                      , - (*pose).ThePose.Orientation.z);
+    apply_world_quaternion(hmd_quart);
+  } else {
+    Quaternion hmd_quart(1, 0, 0, 0);
+    apply_world_quaternion(hmd_quart);
+  }
   glTranslated(listener.camera_x_position
       , -listener.camera_y_position
       , -listener.camera_z_position);
@@ -197,20 +204,26 @@ int main(int argc, char** argv) {
 
   GLFWmonitor* monitor = hmd->Monitor();
 
-  if (!monitor) {
+  GLFWwindow *window = nullptr;
+
+  if (monitor) {
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    window = glfwCreateWindow(mode->width
+                                      , mode->height
+                                      , "My Title"
+                                      , monitor
+                                      , NULL);
+
+    hmd->SetupOvrConfig();
+  } else {
     printf("Cannot get monitor.\n");
-    exit(EXIT_FAILURE);
+    window = glfwCreateWindow(1440
+                                      , 900
+                                      , "My Title"
+                                      , glfwGetPrimaryMonitor()
+                                      , NULL);
   }
-
-  const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-
-  GLFWwindow *window = glfwCreateWindow(mode->width
-                                    , mode->height
-                                    , "My Title"
-                                    , monitor
-                                    , NULL);
-
-  hmd->SetupOvrConfig();
 
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1);

@@ -20,6 +20,7 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <OVR_CAPI_GL.h>
+#include <boost/optional.hpp>
 
 #include "field_line.h"
 #include "hand_input_listener.h"
@@ -34,7 +35,7 @@ class OculusHmd {
   OculusHmd();
   ~OculusHmd();
 
-  ovrPoseStatef Track();
+  boost::optional<ovrPoseStatef> Track();
   void SetupOvrConfig();
   GLFWmonitor *Monitor();
   void FrameInit();
