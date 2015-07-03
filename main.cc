@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
   GLFWwindow *window = glfwCreateWindow(mode->width
                                     , mode->height
                                     , "My Title"
-                                    , glfwGetPrimaryMonitor()
+                                    , monitor
                                     , NULL);
 
   hmd->SetupOvrConfig();
