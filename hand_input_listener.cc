@@ -45,6 +45,11 @@ void HandInputListener::onFrame(const Controller& controller) {
   } else {
     rotate_camera_(frame.hand(open_hand_id));
   }
+
+  // set skeleton_hands
+  for (int i=0; i<frame.hands().count(); i++) {
+      Hand hand = frame.hands()[i];
+  }
   unlock();
 }
 
