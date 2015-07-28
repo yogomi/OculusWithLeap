@@ -29,7 +29,7 @@ void HandInputListener::onInit(const Controller& controller)
 void HandInputListener::onFrame(const Controller& controller) {
   lock();
   const Frame frame = controller.frame();
-  skeleton_hands_.clear();
+  skeleton_hands.clear();
   int open_hand_id = open_hand_id_(frame);
   if (frame.hands().isEmpty()) {
     for (std::map<int,pen_line::TracingLine>::iterator tracing_line_map = tracing_lines.begin()
@@ -49,6 +49,56 @@ void HandInputListener::onFrame(const Controller& controller) {
   // set skeleton_hands
   for (int i=0; i<frame.hands().count(); i++) {
       Hand hand = frame.hands()[i];
+      virtual_hand::SkeletonHand out_hand;
+      out_hand.id = hand.id();
+      out_hand.confidence = hand.confidence();
+      out_hand.grabStrength = hand.grabStrength();
+
+      const Eigen::Vector3f palm = hand.palmPosition().toVector3<Eigen::Vector3f>();
+      const Eigen::Vector3f palmDir = (hand.direction().toVector3<Eigen::Vector3f>()).normalized();
+      const Eigen::Vector3f palmNormal = (hand.palmNormal().toVector3<Eigen::Vector3f>()).normalized();
+      const Eigen::Vector3f palmSide = palmDir.cross(palmNormal).normalized();
+
+      const Eigen::Matrix3f palmRotation = (Eigen::Matrix3f(hand.basis().toArray3x3()));
+      Eigen::Matrix3f palmBasis = Eigen::Matrix3f(hand.basis().toArray3x3());
+
+      // Remove scale from palmBasis
+      const float basisScale = (palmBasis * Eigen::Vector3f::UnitX()).norm();
+      palmBasis *= 1.0f / basisScale;
+
+      out_hand.center = palm;
+      out_hand.rotationButNotReally = palmBasis;
+
+      for (int j = 0; j < 5; j++) {
+        const Leap::Finger& finger = hand.fingers()[j];
+
+        for (int k = 0; k < 3; k++) {
+          Leap::Bone bone = finger.bone(static_cast<Leap::Bone::Type>(k + 1));
+          out_hand.joints[j*3 + k] = bone.nextJoint().toVector3<Eigen::Vector3f>();
+          out_hand.jointConnections[j*3 + k] = bone.prevJoint().toVector3<Eigen::Vector3f>();
+        }
+      }
+
+      const float thumbDist = (out_hand.jointConnections[0] - palm).norm();
+      const Eigen::Vector3f wrist = palm - thumbDist*(palmDir*0.8f + static_cast<float>(hand.isLeft() ? -1 : 1)*palmSide*0.5f);
+
+      for (int j = 0; j < 4; j++) {
+        out_hand.joints[15 + j] = out_hand.jointConnections[3 * j];
+        out_hand.jointConnections[15 + j] = out_hand.jointConnections[3 * (j + 1)];
+      }
+      out_hand.joints[19] = out_hand.jointConnections[12];
+      out_hand.jointConnections[19] = wrist;
+      out_hand.joints[20] = wrist;
+      out_hand.jointConnections[20] = out_hand.jointConnections[0];
+
+      // Arm
+      const Eigen::Vector3f elbow = hand.arm().elbowPosition().toVector3<Eigen::Vector3f>();
+      out_hand.joints[21] = elbow - thumbDist*(hand.isLeft() ? -1 : 1)*palmSide*0.5;
+      out_hand.jointConnections[21] = wrist;
+      out_hand.joints[22] = elbow + thumbDist*(hand.isLeft() ? -1 : 1)*palmSide*0.5;
+      out_hand.jointConnections[22] = out_hand.jointConnections[0];
+
+      skeleton_hands.push_back(out_hand);
   }
   unlock();
 }

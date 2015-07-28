@@ -32,6 +32,7 @@ class HandInputListener : public Leap::Listener {
   Quaternion world_y_quaternion;
   pen_line::LineList penline_list;
   std::map<int, pen_line::TracingLine> tracing_lines;
+  std::vector<virtual_hand::SkeletonHand> skeleton_hands;
 
   float camera_x_position;
   float camera_y_position;
@@ -40,7 +41,6 @@ class HandInputListener : public Leap::Listener {
  private:
   Leap::Vector convert_to_world_position_(const Leap::Vector &input_vector);
   bool _lock;
-  std::vector<virtual_hand::SkeletonHand> skeleton_hands_;
   int open_hand_id_(const Leap::Frame& frame);
   void trace_finger_(const Leap::Hand& hand);
   void rotate_camera_(const Leap::Hand& hand);
